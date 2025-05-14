@@ -1,0 +1,50 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+  errors:
+    override_on_non_overriding_member: error
+    must_be_immutable: error
+    invalid_use_of_protected_member: error
+    inference_failure_on_function_return_type: error
+    unawaited_futures: error
+    discarded_futures: error
+    await_only_futures: error
+    avoid_print: ignore
+    slash_for_doc_comments: ignore
+    library_private_types_in_public_api: error
+    annotate_overrides: warning
+    collection_methods_unrelated_type: error
+    unrelated_type_equality_checks: warning
+
+  exclude:
+    - "**/*.pb.dart"
+    - "**/*.pbgrpc.dart"
+    - "**/*.pbjson.dart"
+    - "**/*.pbenum.dart"
+
+linter:
+  rules:
+    - unawaited_futures
+    - discarded_futures
+    - await_only_futures
+    - cancel_subscriptions
+    - no_leading_underscores_for_local_identifiers
+
+    # The following rules are copied from flutter_lints/flutter.yaml
+    - avoid_print
+    - avoid_unnecessary_containers
+    - avoid_web_libraries_in_flutter
+    - no_logic_in_create_state
+    - prefer_const_constructors
+    - prefer_const_constructors_in_immutables
+    - prefer_const_declarations
+    - prefer_const_literals_to_create_immutables
+    - sized_box_for_whitespace
+    - sort_child_properties_last
+    - use_build_context_synchronously
+    - use_full_hex_values_for_flutter_colors
+    - use_key_in_widget_constructors
