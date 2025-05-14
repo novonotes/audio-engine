@@ -11,7 +11,7 @@ Future<EngineSession> setUpInProcessAudioEngine() async {
     await manager.dispose();
   });
   final dllPath =
-      await getAudioEngineLibraryPath(audioEngineRootPath: "../../..");
+      await getAudioEngineLibraryPath(audioEngineRepositoryPath: "../../..");
 
   try {
     final engine = await manager.startInProcessAudioEngine(dllPath);
@@ -39,7 +39,7 @@ Future<EngineSession> setUpAudioEngineService({
   // Audio Engine Service のプロセスを起動
   try {
     final executablePath = await getAudioEngineServiceExecutablePath(
-      audioEngineRootPath: "../../..",
+      audioEngineRepositoryPath: "../../..",
     );
     if (!engineDebugMode) {
       unawaited(manager.startSubprocessAudioEngine(executablePath));

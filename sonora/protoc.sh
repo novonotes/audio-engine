@@ -4,7 +4,7 @@
 
 set -e -u -o pipefail
 
-APIS_DIR="../../APIs"
+APIS_DIR="../apis"
 OUTPUT_DIR="./Modules/AudioEngineProto"
 GRPC_VERSION="v1.68.2"
 PROTOC_COMMAND="$GRPC_INSTALLER_DIR/$GRPC_VERSION/install-macOS-universal/bin/protoc"
@@ -15,8 +15,8 @@ echo "PROTOC_COMMAND: $PROTOC_COMMAND"
 echo "protoc version:"
 $PROTOC_COMMAND --version 
 
-rm -r $OUTPUT_DIR/google
-rm -r $OUTPUT_DIR/novonotes
+rm -rf $OUTPUT_DIR/google
+rm -rf $OUTPUT_DIR/novonotes
 
 $PROTOC_COMMAND -I=$APIS_DIR --cpp_out=$OUTPUT_DIR \
     google/protobuf/{struct,field_mask,duration,timestamp,any,empty}.proto \

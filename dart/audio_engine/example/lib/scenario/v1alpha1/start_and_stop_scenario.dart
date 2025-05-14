@@ -27,7 +27,7 @@ Future<void> main() async {
   final manager = e.EngineSessionManager();
   try {
     final dllPath =
-        await getAudioEngineLibraryPath(audioEngineRootPath: "../../..");
+        await getAudioEngineLibraryPath(audioEngineRepositoryPath: "../../..");
 
     e.TransportController? transportController;
     try {

@@ -23,7 +23,7 @@ void main() {
     setUpAll(() async {
       if (Platform.isIOS == false) {
         dllPath = await getAudioEngineLibraryPath(
-          audioEngineRootPath: "../../..",
+          audioEngineRepositoryPath: "../../..",
         );
         print("dllPath: $dllPath");
       }

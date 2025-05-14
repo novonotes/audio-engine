@@ -3,7 +3,7 @@
 #!/bin/bash
 set -e
 
-APIS_DIR="../../../APIs"
+APIS_DIR="../../apis"
 ENGINE_PLUGIN_DIR="../audio_engine_protoc_plugin"
 OUTPUT_DIR="./lib/src/generated"
 

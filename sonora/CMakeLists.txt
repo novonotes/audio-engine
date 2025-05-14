@@ -34,7 +34,7 @@ endif()
 
 project(AudioEngine VERSION 0.0.1)
 
-set(DEPENDENCIES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../Dependencies")
+set(DEPENDENCIES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Dependencies")
 
 add_subdirectory(${DEPENDENCIES_DIR}/tracktion_engine/modules/juce JUCE) 
 

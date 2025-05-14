@@ -103,7 +103,7 @@ Future<void> main() async {
   final manager = ae.EngineSessionManager();
   try {
     final dllPath =
-        await getAudioEngineLibraryPath(audioEngineRootPath: "../../..");
+        await getAudioEngineLibraryPath(audioEngineRepositoryPath: "../../..");
 
     ae.EngineSession? engine;
     try {

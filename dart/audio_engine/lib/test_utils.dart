@@ -7,25 +7,26 @@ String _absoluteAndNormalizePath(String s) {
   return normalize(absolute(s));
 }
 
+/// [audioEngineRepositoryPath] は novonotes/audio-engine リポジトリのルートディレクトリを指定します。
 Future<String> getAudioEngineLibraryPath({
-  String audioEngineRootPath = "../..",
+  String audioEngineRepositoryPath = "../..",
 }) async {
   if (kDebugMode) {
     if (Platform.isMacOS) {
       return _absoluteAndNormalizePath(join(
-        audioEngineRootPath,
+        audioEngineRepositoryPath,
         "sonora/build/AudioEngineLibrary/Debug/libAudioEngine.so",
       ));
     }
     if (Platform.isLinux) {
       return _absoluteAndNormalizePath(join(
-        audioEngineRootPath,
+        audioEngineRepositoryPath,
         "sonora/build/AudioEngineLibrary/libAudioEngine.so",
       ));
     }
     if (Platform.isWindows) {
       return _absoluteAndNormalizePath(join(
-        audioEngineRootPath,
+        audioEngineRepositoryPath,
         "sonora/build/AudioEngineLibrary/Debug/AudioEngine.dll",
       ));
     }
@@ -40,24 +41,24 @@ Future<String> getAudioEngineLibraryPath({
 }
 
 Future<String> getAudioEngineServiceExecutablePath({
-  String audioEngineRootPath = "../..",
+  String audioEngineRepositoryPath = "../..",
 }) async {
   if (kDebugMode) {
     if (Platform.isMacOS) {
       return _absoluteAndNormalizePath(join(
-        audioEngineRootPath,
+        audioEngineRepositoryPath,
         "sonora/build/AudioEngineService/AudioEngineService_artefacts/Debug/AudioEngineService",
       ));
     }
     if (Platform.isLinux) {
       return _absoluteAndNormalizePath(join(
-        audioEngineRootPath,
+        audioEngineRepositoryPath,
         "sonora/build/AudioEngineService/AudioEngineService_artefacts/Debug/AudioEngineService",
       ));
     }
     if (Platform.isWindows) {
       return _absoluteAndNormalizePath(join(
-        audioEngineRootPath,
+        audioEngineRepositoryPath,
         "sonora/build/AudioEngineService/AudioEngineService_artefacts/Debug/AudioEngineService.exe",
       ));
     }

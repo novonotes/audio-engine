@@ -23,7 +23,7 @@ target_link_libraries(AudioEngineCore
 # Implementation
 ######################################################################################
 
-set(DEPENDENCIES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../Dependencies")
+set(DEPENDENCIES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../Dependencies")
 
 juce_add_module(${DEPENDENCIES_DIR}/tracktion_engine/modules/tracktion_core)
 juce_add_module(${DEPENDENCIES_DIR}/tracktion_engine/modules/tracktion_graph)
