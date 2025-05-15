@@ -28,5 +28,12 @@
     "release": "run-script-os",
     "release:default": "echo 'Unsupported OS'; exit 1",
     "release:macos": "sh ./release_macos.sh"
+  },
+  "devDependencies": {
+    "npm-run-all": "^4.1.5",
+    "rimraf": "^5.0.1",
+    "run-script-os": "^1.1.6",
+    "cli-glob": "^0.1.0",
+    "cross-env": "^7.0.3"
   }
 }
