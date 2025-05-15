@@ -3,10 +3,9 @@
 
 /// プラットフォームごとの設定ディレクトリを取得する関数
 /// 各プラットフォームでのディレクトリ例:
-/// - Windows: C:\Users\<ユーザー名>\AppData\Roaming\NovoNotes\BeatGen Plugin
-/// - macOS:   /Users/<ユーザー名>/Library/Application Support/NovoNotes/BeatGen
-/// Plugin
-/// - Linux:   /home/<ユーザー名>/.config/NovoNotes/BeatGen Plugin
+/// - Windows: C:\Users\<ユーザー名>\AppData\Roaming\Sonora App Bridge
+/// - macOS:   /Users/<ユーザー名>/Library/Application Support/Sonora App Bridge
+/// - Linux:   /home/<ユーザー名>/.config/Sonora App Bridge
 static juce::File getConfigDir()
 {
     // ユーザー専用のアプリケーションデータディレクトリを取得
@@ -15,16 +14,15 @@ static juce::File getConfigDir()
 
 // 各プラットフォームごとの設定ディレクトリ
 #if JUCE_WINDOWS
-    // Windows: %APPDATA%\NovoNotes\BeatGen Plugin
-    return appDataDir.getChildFile("NovoNotes").getChildFile("BeatGen Plugin");
+    // Windows: %APPDATA%\Sonora App Bridge
+    return appDataDir.getChildFile("Sonora App Bridge");
 #elif JUCE_MAC
-    // macOS: ~/Library/Application Support/NovoNotes/BeatGen Plugin
+    // macOS: ~/Library/Application Support/Sonora App Bridge
     return appDataDir.getChildFile("Application Support")
-        .getChildFile("NovoNotes")
-        .getChildFile("BeatGen Plugin");
+        .getChildFile("Sonora App Bridge");
 #elif JUCE_LINUX
-    // Linux: ~/.config/NovoNotes/BeatGen Plugin
-    return appDataDir.getChildFile("NovoNotes").getChildFile("BeatGen Plugin");
+    // Linux: ~/.config/Sonora App Bridge
+    return appDataDir.getChildFile("Sonora App Bridge");
 #else
 #error "Unsupported platform"
 #endif
@@ -33,18 +31,15 @@ static juce::File getConfigDir()
 /// 設定ファイルへのフルパスを取得する関数
 /// 各プラットフォームでの設定ファイル例:
 /// - Windows (リリース):
-/// C:\Users\<ユーザー名>\AppData\Roaming\NovoNotes\BeatGen Plugin\settings.json
+/// C:\Users\<ユーザー名>\AppData\Roaming\Sonora App Bridge\settings.json
 /// - Windows (デバッグ):
-/// C:\Users\<ユーザー名>\AppData\Roaming\NovoNotes\BeatGen
-/// Plugin\settings.dev.json
+/// C:\Users\<ユーザー名>\AppData\Roaming\Sonora App Bridge\settings.dev.json
 /// - macOS (リリース):   /Users/<ユーザー名>/Library/Application
-/// Support/NovoNotes/BeatGen Plugin/settings.json
+/// Support/Sonora App Bridge/settings.json
 /// - macOS (デバッグ):   /Users/<ユーザー名>/Library/Application
-/// Support/NovoNotes/BeatGen Plugin/settings.dev.json
-/// - Linux (リリース):   /home/<ユーザー名>/.config/NovoNotes/BeatGen
-/// Plugin/settings.json
-/// - Linux (デバッグ):   /home/<ユーザー名>/.config/NovoNotes/BeatGen
-/// Plugin/settings.dev.json
+/// Support/Sonora App Bridge/settings.dev.json
+/// - Linux (リリース):   /home/<ユーザー名>/.config/Sonora App Bridge/settings.json
+/// - Linux (デバッグ):   /home/<ユーザー名>/.config/Sonora App Bridge/settings.dev.json
 static juce::File getSettingsFile()
 {
     // 設定ディレクトリを取得

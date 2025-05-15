@@ -8,40 +8,38 @@ namespace novonotes
 
 Settings::Settings(const juce::var& json) : _json(json) {}
 
-juce::String Settings::getApplicationPath() const
+juce::String Settings::getCommand() const
 {
     if(_json.isObject())
     {
-        juce::var applicationPath = _json["applicationPath"];
+        juce::var command = _json["command"];
 
-        if(applicationPath.isString() && !applicationPath.toString().isEmpty())
+        if(command.isString() && !command.toString().isEmpty())
         {
-            return applicationPath.toString();
+            return command.toString();
         }
     }
+    return "";
+}
 
-    juce::String defaultPath;
+std::vector<juce::String> Settings::getArgs() const
+{
+    if(_json.isObject())
+    {
+        juce::var args = _json["args"];
 
-#if JUCE_WINDOWS
-    defaultPath =
-        juce::File::getSpecialLocation(juce::File::globalApplicationsDirectory)
-            .getChildFile("BeatGen")
-            .getFullPathName();
-#elif JUCE_MAC
-    defaultPath =
-        juce::File::getSpecialLocation(juce::File::globalApplicationsDirectory)
-            .getChildFile("BeatGen")
-            .getFullPathName();
-#elif JUCE_LINUX
-    defaultPath =
-        juce::File::getSpecialLocation(juce::File::globalApplicationsDirectory)
-            .getChildFile("BeatGen")
-            .getFullPathName();
-#else
-    defaultPath = juce::String();
-#endif
-
-    return defaultPath;
+        if(args.isArray())
+        {
+            auto tmpPtr =  args.getArray();
+            std::vector<juce::String> vec;
+            for (juce::var item : *tmpPtr)
+            {
+                vec.emplace_back(item.toString());
+            }
+            return vec;
+        }
+    }
+    return {};
 }
 
 juce::String Settings::getCwd() const

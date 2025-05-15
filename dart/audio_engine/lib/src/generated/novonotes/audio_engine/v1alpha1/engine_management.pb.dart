@@ -164,7 +164,7 @@ class InitializeResponse extends $pb.GeneratedMessage {
   ///
   ///  "novonotes.audio-engine-library.v1"
   ///  "novonotes.audio-engine-service.v2"
-  ///  "novonotes.beatgen-plugin.v2",
+  ///  "novonotes.sonora-app-bridge.v2",
   ///  "your-company.awesome-engine.v3"
   @$pb.TagNumber(3)
   $core.String get engineTypeId => $_getSZ(0);

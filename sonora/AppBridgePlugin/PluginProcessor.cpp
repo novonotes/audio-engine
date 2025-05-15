@@ -23,8 +23,8 @@ PluginProcessor::PluginProcessor()
 {
     numInstances++;
 
-    _engine = std::make_unique<AudioEngine>("novonotes.beatgen-plugin.v1",
-                                            "BeatGen Plugin", true);
+    _engine = std::make_unique<AudioEngine>("novonotes.sonora-app-bridge.v1",
+                                            "Sonora App Bridge", true);
     _handler = std::make_unique<ProtoMessageHandler>(*_engine);
     _client = std::make_unique<SocketClient>(*_handler);
     _udpChannel = std::make_unique<UdpChannel>(*_handler);
@@ -123,7 +123,7 @@ bool PluginProcessor::isBusesLayoutSupported(const BusesLayout &layouts) const
 
 void PluginProcessor::getStateInformation(MemoryBlock &destData)
 {
-    ValueTree vt("beatgen-plugin");
+    ValueTree vt("sonora-app-bridge");
     vt.setProperty("sock-path", _sockPath, nullptr);
     auto sessionId = _client->getSessionId();
     vt.setProperty("session-id", static_cast<int>(sessionId), nullptr);
@@ -241,15 +241,22 @@ void PluginProcessor::linkWithApp()
         _thread.waitForThreadToExit(10000);
     }
 
-    std::cout << "initializeEngine" << std::endl;
+    Logger::info("Initialize engine");
 
     _thread.callback = [=, this](Thread &) {
-        std::cout << "start background thread" << std::endl;
+        Logger::info("Start background thread");
 
-        std::cout << "start child process" << std::endl;
+        Logger::info("Start child process");
 
         auto const cwd = _settings.getCwd();
-        auto const applicationPath = _settings.getApplicationPath();
+        auto const command = _settings.getCommand();
+        auto const args = _settings.getArgs();
+        
+        if (command.isEmpty())
+        {
+            Logger::error("Abort linking: empty application path.");
+            return;
+        }
 
         juce::File(cwd).setAsCurrentWorkingDirectory();
 
@@ -263,18 +270,24 @@ void PluginProcessor::linkWithApp()
         while(_isLinking.load())
         {
             ChildProcess child;
-            StringArray args = {applicationPath + "/Contents/MacOS/beatgen",
-                                "--audio-engine-uds", _sockPath,
-                                // コマンドライン引数ではなく settings.json
-                                // で設定する方がいいのかも。
-                                "--auto-exit-time", "0.01", "--settings",
-                                "settings.plugin.dev.json"};
+            
+            // Build full command array
+            StringArray fullCommand;
+            {
+                fullCommand.add(command);
+                for (juce::String sourcelArg : args)
+                {
+                    // String interpolation: replace placeholders
+                    juce::String interpolated = sourcelArg.replace("$SOCK_PATH", _sockPath);
+                    fullCommand.add(interpolated);
+                }
+            }
 
-            bool const isStarted = child.start(args, 0);
+            bool const isStarted = child.start(fullCommand, 0);
             if(!isStarted)
             {
-                // TODO: error handling
-                throw std::runtime_error("Failed to start beatgen app");
+                Logger::error("Failed to start application");
+                return;
             }
 
             // アプリ起動状態

@@ -11,7 +11,13 @@ settings.json や settings.dev.json でプラグインの挙動を変更でき�
 
 ```json
 {
-  "applicationPath": "/Users/YourName/Application/beatgen.app",
-  "cwd": "/Users/YourName/Application"
+  "command": "/Applications/YourApp/Contents/MacOS/YourApp",
+  "cwd": "/Users/YourName",
+  "args": ["--app-bridge-mode", "--uds-path", "$SOCK_PATH"]
 }
 ```
+
+cwd はオプショナルです。
+args 内の以下の文字列はプレースホルダとして扱われ、実行時に置き換えられます。
+
+- `$SOCK_PATH`: プラグインと、アプリケーションの間の通信に使用される Unix Domain Socket のパス。

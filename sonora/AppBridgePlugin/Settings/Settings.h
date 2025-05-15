@@ -11,8 +11,9 @@ class Settings
     static Settings initialize();
     explicit Settings(const juce::var& json);
 
-    juce::String getApplicationPath() const;
+    juce::String getCommand() const;
     juce::String getCwd() const;
+    std::vector<juce::String> getArgs() const;
 
    private:
     juce::var _json;

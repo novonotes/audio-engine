@@ -102,7 +102,7 @@ class PluginDevEditor
 
         String text;
         // clang-format off
-        text << "BeatGen Plugin Dev Editor" << newLine << newLine
+        text << "Sonora App Bridge Dev Editor" << newLine << newLine
              << "Host Info:" << newLine
              << PlayHeadHelpers::getTimecodeDisplay(_positionInfo)
              << newLine << newLine

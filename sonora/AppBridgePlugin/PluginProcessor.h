@@ -34,8 +34,8 @@ class PluginProcessor : public AudioProcessor
     bool hasEditor() const override { return true; }
 
     //==============================================================================
-    const String getName() const override { return "BeatGen Plugin"; }
-    const String getVersion() const { return "0.1.0-alpha.2"; }
+    const String getName() const override { return "Sonora App Bridge"; }
+    const String getVersion() const { return "0.1.0"; }
     bool acceptsMidi() const override { return true; }
     bool producesMidi() const override { return true; }
     double getTailLengthSeconds() const override { return 0; }
