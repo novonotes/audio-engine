@@ -62,7 +62,7 @@ iOS向けのビルドはmacOS上のみ可能です。
 - **AudioEngineCore**: 音声処理、シーケンサー、オーディオグラフなどの Audio Engine の主要機能の実装。
 - **AudioDeviceManager**: Audio Device の繋ぎ込みのためのコード。
 - **ProtoMessageHandler**: アプリケーションから受け取った Protobuf のメッセージの処理。
-- **Nam**: Nam プロトコルの実装。Nam については、[nam.md](../doc/nam.md) 参照。
+- **Nam**: Nam プロトコルの実装。Nam については、[nam-v1.md](../doc/ja/nam-v1.md) 参照。
 - **SocketIo**: UDP Socket や UDS などのソケットを用いた、 Audio Engine のインターフェースの実装。
 
 ### Dependency Graph
@@ -84,4 +84,4 @@ graph BT
 
 ## Contributing
 
-コードに手を加えようとするコントリビューターやメンテナーは、[contributing.md](./contributing.md) を必ず読んでください。
+コードに手を加えようとするコントリビューターやメンテナーは、[contributing.md](./Documents/Japanese/contributing.md) を必ず読んでください。

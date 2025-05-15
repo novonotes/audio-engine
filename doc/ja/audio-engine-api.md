@@ -16,7 +16,7 @@ AudioEngine API は、AudioEngine （以下エンジン）と、エンジン を
 
 ### Message の形式
 
-[NAM](nam.md) に準拠する。
+[NAM](nam-v1.md) に準拠する。
 NAP で規定されていない、message body のデータ形式や、context のデータ形式は [APIs のパッケージ](../../APIs/novonotes/audio_engine/README.md) に定義される Protobuf バイナリフォーマットとする。
 
 ### メッセージの転送方法
