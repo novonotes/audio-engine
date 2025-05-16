@@ -15,19 +15,19 @@ Future<String> getAudioEngineLibraryPath({
     if (Platform.isMacOS) {
       return _absoluteAndNormalizePath(join(
         audioEngineRepositoryPath,
-        "sonora/build/AudioEngineLibrary/Debug/libAudioEngine.so",
+        "sonora/build/AudioEngineLibrary/Debug/libSonora.so",
       ));
     }
     if (Platform.isLinux) {
       return _absoluteAndNormalizePath(join(
         audioEngineRepositoryPath,
-        "sonora/build/AudioEngineLibrary/libAudioEngine.so",
+        "sonora/build/AudioEngineLibrary/libSonora.so",
       ));
     }
     if (Platform.isWindows) {
       return _absoluteAndNormalizePath(join(
         audioEngineRepositoryPath,
-        "sonora/build/AudioEngineLibrary/Debug/AudioEngine.dll",
+        "sonora/build/AudioEngineLibrary/Debug/Sonora.dll",
       ));
     }
     if (Platform.isIOS) {
@@ -36,7 +36,7 @@ Future<String> getAudioEngineLibraryPath({
   }
   // Release モードでどうするかは仕様未確定
   return _absoluteAndNormalizePath(
-    "libAudioEngine.so",
+    "libSonora.so",
   );
 }
 
@@ -47,24 +47,24 @@ Future<String> getAudioEngineServiceExecutablePath({
     if (Platform.isMacOS) {
       return _absoluteAndNormalizePath(join(
         audioEngineRepositoryPath,
-        "sonora/build/AudioEngineService/AudioEngineService_artefacts/Debug/AudioEngineService",
+        "sonora/build/AudioEngineService/AudioEngineService_artefacts/Debug/SonoraService",
       ));
     }
     if (Platform.isLinux) {
       return _absoluteAndNormalizePath(join(
         audioEngineRepositoryPath,
-        "sonora/build/AudioEngineService/AudioEngineService_artefacts/Debug/AudioEngineService",
+        "sonora/build/AudioEngineService/AudioEngineService_artefacts/Debug/SonoraService",
       ));
     }
     if (Platform.isWindows) {
       return _absoluteAndNormalizePath(join(
         audioEngineRepositoryPath,
-        "sonora/build/AudioEngineService/AudioEngineService_artefacts/Debug/AudioEngineService.exe",
+        "sonora/build/AudioEngineService/AudioEngineService_artefacts/Debug/SonoraService.exe",
       ));
     }
   }
   // Release モードでどうするかは仕様未確定
   return _absoluteAndNormalizePath(
-    "AudioEngineService",
+    "SonoraService",
   );
 }

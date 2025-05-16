@@ -11,7 +11,7 @@ set(TARGET_NAME AudioEngineLibrary)
 if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
   add_library(${TARGET_NAME} SHARED)
   set_target_properties(${TARGET_NAME} PROPERTIES
-    OUTPUT_NAME "AudioEngine"
+    OUTPUT_NAME "Sonora"
     FRAMEWORK TRUE
     FRAMEWORK_VERSION A
     MACOSX_FRAMEWORK_IDENTIFIER com.novo-notes.${TARGET_NAME}
@@ -22,7 +22,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
 else()
   add_library(${TARGET_NAME} MODULE)
   set_target_properties(${TARGET_NAME} PROPERTIES
-      OUTPUT_NAME "AudioEngine"  
+      OUTPUT_NAME "Sonora"  
       POSITION_INDEPENDENT_CODE TRUE
   )
 endif()

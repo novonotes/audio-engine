@@ -1,9 +1,13 @@
-
 set(TARGET_NAME AudioEngineService)
 
 juce_add_console_app(${TARGET_NAME}
-    PRODUCT_NAME ${TARGET_NAME}
+    PRODUCT_NAME SonoraService
 ) 
+
+set_target_properties(${TARGET_NAME} PROPERTIES
+    OUTPUT_NAME "SonoraService"
+)
+
 
 target_sources(${TARGET_NAME} PRIVATE
     Main.cpp
