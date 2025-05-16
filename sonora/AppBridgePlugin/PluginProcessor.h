@@ -31,7 +31,13 @@ class PluginProcessor : public AudioProcessor
 
     //==============================================================================
     AudioProcessorEditor *createEditor() override;
-    bool hasEditor() const override { return true; }
+    bool hasEditor() const override { 
+#ifdef DEBUG
+        return true;
+#else
+        return false;
+#endif
+    }
 
     //==============================================================================
     const String getName() const override { return "Sonora App Bridge"; }

@@ -107,7 +107,11 @@ void PluginProcessor::processBlock(AudioBuffer<float> &buffer, MidiBuffer &midi)
 
 AudioProcessorEditor *PluginProcessor::createEditor()
 {
+#ifdef DEBUG
     return new PluginDevEditor(*this);
+#else
+    return nullptr;
+#endif
 }
 
 bool PluginProcessor::isBusesLayoutSupported(const BusesLayout &layouts) const
@@ -117,7 +121,6 @@ bool PluginProcessor::isBusesLayoutSupported(const BusesLayout &layouts) const
 
     if(layouts.getMainOutputChannelSet() != layouts.getMainInputChannelSet())
         return false;
-
     return true;
 }
 

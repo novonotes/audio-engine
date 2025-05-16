@@ -6,6 +6,7 @@
 ## 設定
 
 settings.json や settings.dev.json でプラグインの挙動を変更できます。
+#ifdef DEBUG の時に settings.dev.json が使われます。（SettingsFile.h 参照）
 開発には、以下のような内容の settings.dev.json を作成してください。
 ファイルの配置場所は、[SettingsFile.h](./Source/Settings/SettingsFile.h) の `getSettingsFile` のコメントを参照。
 
