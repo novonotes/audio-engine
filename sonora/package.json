@@ -24,10 +24,7 @@
     "open:windows": "start ./build/AudioEngine.sln",
     "protoc": "bash ./protoc.sh",
     "test": "yarn build",
-    "test:ci": "cross-env CI=true yarn test",
-    "release": "run-script-os",
-    "release:default": "echo 'Unsupported OS'; exit 1",
-    "release:macos": "sh ./release_macos.sh"
+    "test:ci": "cross-env CI=true yarn test"
   },
   "devDependencies": {
     "npm-run-all": "^4.1.5",
