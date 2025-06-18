@@ -1,0 +1,19 @@
+name: nam
+description: Dart implementation of the NAM protocol.
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: ^3.5.2
+
+dependencies:
+  meta: ^1.15.0
+  path: ^1.9.0
+  protobuf: ^4.0.0
+  rxdart: ^0.28.0
+  uds_win:
+    path: ../uds_win
+
+dev_dependencies:
+  lints: ^4.0.0
+  test: ^1.24.0

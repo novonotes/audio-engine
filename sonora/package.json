@@ -1,0 +1,36 @@
+{
+  "license": "UNLICENSED",
+  "private": true,
+  "name": "audio-engine-sonora",
+  "version": "1.12.0-beta.2",
+  "scripts": {
+    "build": "cmake --build build",
+    "build:release": "cmake --build build --config Release",
+    "build:ios": "cmake --build build-ios --target AudioEngineLibrary",
+    "clean": "rimraf build",
+    "configure": "run-script-os",
+    "configure:default": "cmake . -B build",
+    "configure:ios": "cmake . -B build-ios -G Xcode -DCMAKE_SYSTEM_NAME=iOS",
+    "configure:macos": "cmake . -B build -G Xcode",
+    "configure:release": "run-script-os",
+    "configure:release:default": "cmake -DCMAKE_BUILD_TYPE=Release -B build",
+    "configure:release:macos": "cmake . -B build -G Xcode -DCMAKE_OSX_ARCHITECTURES=\"arm64;x86_64\"",
+    "dev": "run-s configure open",
+    "dev:ios": "run-s configure:ios open:ios",
+    "open": "run-script-os",
+    "open:default": "echo 'Unsupported OS'",
+    "open:ios": "open ./build-ios/AudioEngine.xcodeproj",
+    "open:macos": "open ./build/AudioEngine.xcodeproj",
+    "open:windows": "start ./build/AudioEngine.sln",
+    "protoc": "bash ./protoc.sh",
+    "test": "yarn build",
+    "test:ci": "cross-env CI=true yarn test"
+  },
+  "devDependencies": {
+    "npm-run-all": "^4.1.5",
+    "rimraf": "^5.0.1",
+    "run-script-os": "^1.1.6",
+    "cli-glob": "^0.1.0",
+    "cross-env": "^7.0.3"
+  }
+}

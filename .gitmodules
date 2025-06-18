@@ -1,0 +1,6 @@
+[submodule "sonora/Dependencies/tracktion_engine"]
+	path = sonora/Dependencies/tracktion_engine
+	url = https://github.com/tracktion/tracktion_engine.git
+[submodule "apis"]
+	path = apis
+	url = https://github.com/novonotes/novonotes-apis.git

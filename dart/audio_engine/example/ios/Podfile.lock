@@ -1,0 +1,34 @@
+PODS:
+  - audio_engine (0.0.1):
+    - Flutter
+  - audio_engine_flutter_libs (0.0.1):
+    - Flutter
+  - Flutter (1.0.0)
+  - integration_test (0.0.1):
+    - Flutter
+
+DEPENDENCIES:
+  - audio_engine (from `.symlinks/plugins/audio_engine/ios`)
+  - audio_engine_flutter_libs (from `.symlinks/plugins/audio_engine_flutter_libs/ios`)
+  - Flutter (from `Flutter`)
+  - integration_test (from `.symlinks/plugins/integration_test/ios`)
+
+EXTERNAL SOURCES:
+  audio_engine:
+    :path: ".symlinks/plugins/audio_engine/ios"
+  audio_engine_flutter_libs:
+    :path: ".symlinks/plugins/audio_engine_flutter_libs/ios"
+  Flutter:
+    :path: Flutter
+  integration_test:
+    :path: ".symlinks/plugins/integration_test/ios"
+
+SPEC CHECKSUMS:
+  audio_engine: b4f5ae131b8e1c34bf7fee2befcdd9a38b0878c0
+  audio_engine_flutter_libs: 979e3e2f9b31bb5e5dca6328d7fcd59563c7e59c
+  Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
+  integration_test: 252f60fa39af5e17c3aa9899d35d908a0721b573
+
+PODFILE CHECKSUM: 819463e6a0290f5a72f145ba7cde16e8b6ef0796
+
+COCOAPODS: 1.16.2

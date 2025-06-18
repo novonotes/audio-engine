@@ -1,0 +1,31 @@
+{
+  "license": "UNLICENSED",
+  "private": true,
+  "name": "audio-engine-dart",
+  "version": "1.12.0-beta.2",
+  "dependencies": {
+    "audio-engine-sonora": "^1.12.0-beta.2",
+    "nam": "^1.12.0-beta.2"
+  },
+  "scripts": {
+    "analyze": "dart analyze .",
+    "clean": "flutter clean",
+    "dev": "code .",
+    "fix": "dart fix --apply",
+    "format": "dart format .",
+    "postprotoc": "yarn format",
+    "postquicktype": "yarn format",
+    "prepare:dart": "flutter pub get && cd example && flutter pub get",
+    "protoc": "bash ./protoc.sh",
+    "quicktype": "echo 'Do nothing.'",
+    "test": "flutter test --reporter=github --concurrency=1",
+    "test:ci": "run-script-os",
+    "test:ci:default": "cross-env CI=true run-s test test:example test:integration",
+    "test:example": "cd example && flutter test --reporter=github && cd ..",
+    "test:integration": "run-script-os",
+    "test:integration:default": "cd example && bash ./run_integration_test.sh ./integration_test --reporter=github && cd ..",
+    "test:integration:linux": "cd example && bash ./run_integration_test.sh ./integration_test -d linux --reporter=github && cd ..",
+    "test:integration:macos": "cd example && bash ./run_integration_test.sh ./integration_test -d macos --reporter=github && cd ..",
+    "test:integration:windows": "cd example && bash ./run_integration_test.sh ./integration_test -d windows --reporter=github && cd .."
+  }
+}

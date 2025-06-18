@@ -1,0 +1,18 @@
+syntax = "proto3";
+package helloworld;
+
+message HelloRequest {
+   string name = 1;
+}
+
+message HelloReply {
+    string message = 1;
+}
+
+message Context {}
+
+enum BodyType {
+    HANDSHAKE = 0;
+    HELLO_REQUEST = 1;
+    HELLO_REPLY = 2;
+}

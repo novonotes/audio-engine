@@ -1,0 +1,6 @@
+add_subdirectory(AudioDeviceManager)
+add_subdirectory(AudioEngineCore)
+add_subdirectory(Nam)
+add_subdirectory(ProtoMessageHandler)
+add_subdirectory(SocketIo)
+add_subdirectory(AudioEngineProto)
