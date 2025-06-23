@@ -36,31 +36,36 @@ NSPは、シンプルさと責務の単一性を重視しており、以下の2�
 
 #### 2.1.1. 全体構成 (Overall Structure)
 
-メッセージは、7バイトの固定長 `Header` と、可変長の `Body` から構成されます。
+メッセージは、8バイトの固定長 `Header` と、可変長の `Body` から構成されます。
 
 ```
 +------------------+--------------------------+
 |      Header      |           Body           |
 +------------------+--------------------------+
-|     7 bytes      |    body_size bytes       |
+|     8 bytes      |    body_size bytes       |
 +------------------+--------------------------+
 ```
 
 #### 2.1.2. ヘッダー (Header)
 
-ヘッダーは、以下の3つのフィールドで構成されます。
+ヘッダーは、以下の4つのフィールドで構成されます。
 
 ```
-+-------------+-----------------+----------------+
-|   version   |   session_id    |   body_size    |
-+-------------+-----------------+----------------+
-|   1 byte    |     2 bytes     |     4 bytes    |
-|    uint8    |      uint16     |      uint32    |
-+-------------+-----------------+----------------+
++-------------+-----------------+--------------+----------------+
+|   version   |   session_id    |  body_type   |   body_size    |
++-------------+-----------------+--------------+----------------+
+|   1 byte    |     2 bytes     |    1 byte    |     4 bytes    |
+|    uint8    |      uint16     |     uint8    |      uint32    |
++-------------+-----------------+--------------+----------------+
 ```
 
 - **`version`**: プロトコルのバージョンを示す `uint8` 型の整数。本仕様書では `0x01`。
 - **`session_id`**: セッションを識別する `uint16` 型の整数。
+- **`body_type`**: メッセージの種類を示す `uint8` 型の整数。
+  - `0x00`: ユーザーメッセージ（アプリケーションデータ）
+  - `0x01`: `INIT` ハンドシェイクメッセージ
+  - `0x02`: `ACK` ハンドシェイクメッセージ
+  - `0x03`: `RDY` ハンドシェイクメッセージ
 - **`body_size`**: 後続する `Body` フィールドのバイト長を示す `uint32` 型の整数。
 
 #### 2.1.3. ボディ (Body)
@@ -79,29 +84,29 @@ NSPは、シンプルさと責務の単一性を重視しており、以下の2�
 
 #### 2.2.2. ハンドシェイクメッセージ (Handshake Messages)
 
-ハンドシェイク中、メッセージは `body_size` が `1` であり、`Body` には1バイトのコマンドIDが含まれます。
+ハンドシェイク中、メッセージは `body_type` フィールドでメッセージの種類を識別します。ハンドシェイクメッセージの `Body` は空（`body_size` = 0）にすることができます。
 
-| コマンド | 値 (Hex) | `body_size` |    送信者    | 説明                                                         |
-| :------: | :------: | :---------: | :----------: | :----------------------------------------------------------- |
-|  `INIT`  |  `0x01`  |      1      | クライアント | セッション確立または再開を要求する                           |
-|  `ACK`   |  `0x02`  |      1      |   サーバー   | セッションIDを承認・通知する                                 |
-|  `RDY`   |  `0x03`  |      1      | クライアント | サーバーが指定したセッションIDの準備が完了したことを通知する |
+| コマンド | `body_type` | `body_size` |    送信者    | 説明                                                         |
+| :------: | :---------: | :---------: | :----------: | :----------------------------------------------------------- |
+|  `INIT`  |   `0x01`    |      0      | クライアント | セッション確立または再開を要求する                           |
+|  `ACK`   |   `0x02`    |      0      |   サーバー   | セッションIDを承認・通知する                                 |
+|  `RDY`   |   `0x03`    |      0      | クライアント | サーバーが指定したセッションIDの準備が完了したことを通知する |
 
 #### 2.2.3. 通信シーケンス (Communication Sequence)
 
 ##### 2.2.3.1. 新規セッション確立 (New Session Establishment)
 
-1.  **Client → Server**: クライアントは `Header` の `session_id` を `0` に設定し、`Body` に `[0x01]` (`INIT`) を格納したメッセージを送信します。
-2.  **Server → Client**: サーバーは `INIT` を受信後、`0` 以外のユニークな `session_id` を新たに割り当てます。そのIDを `Header` に設定し、`Body` に `[0x02]` (`ACK`) を格納したメッセージを返信します。
-3.  **Client → Server**: クライアントは `ACK` を受信後、サーバーから指定された `session_id` を `Header` に設定し、`Body` に `[0x03]` (`RDY`) を格納したメッセージを送信します。
+1.  **Client → Server**: クライアントは `Header` の `session_id` を `0` に、`body_type` を `0x01` (`INIT`) に設定したメッセージを送信します。
+2.  **Server → Client**: サーバーは `INIT` を受信後、`0` 以外のユニークな `session_id` を新たに割り当てます。そのIDを `Header` に設定し、`body_type` を `0x02` (`ACK`) に設定したメッセージを返信します。
+3.  **Client → Server**: クライアントは `ACK` を受信後、サーバーから指定された `session_id` を `Header` に設定し、`body_type` を `0x03` (`RDY`) に設定したメッセージを送信します。
 4.  サーバーが `RDY` メッセージを受信した時点で、セッションは「確立済み」状態となります。
 
 ##### 2.2.3.2. セッション再開 (Session Resumption)
 
-1.  **Client → Server**: クライアントは再開したいセッションの `session_id` (≠0) を `Header` に設定し、`Body` に `[0x01]` (`INIT`) を格納したメッセージを送信します。
+1.  **Client → Server**: クライアントは再開したいセッションの `session_id` (≠0) を `Header` に設定し、`body_type` を `0x01` (`INIT`) に設定したメッセージを送信します。
 2.  **Server → Client**: サーバーは `INIT` を受信後、以下のように応答します。
-    - 要求された `session_id` が有効な（再開可能な）場合: 同一の `session_id` を `Header` に設定し、`ACK` を返信します。
-    - 要求された `session_id` が無効な（存在しない、または期限切れの）場合: 新規セッション確立時と同様に、新たな `session_id` を割り当てて `ACK` を返信します。
+    - 要求された `session_id` が有効な（再開可能な）場合: 同一の `session_id` を `Header` に設定し、`body_type` を `0x02` (`ACK`) に設定して返信します。
+    - 要求された `session_id` が無効な（存在しない、または期限切れの）場合: 新規セッション確立時と同様に、新たな `session_id` を割り当てて `body_type` を `0x02` (`ACK`) に設定して返信します。
 3.  以降の手順は、新規セッション確立のステップ3以降と同様です。
 
 #### 2.2.4. シーケンス図 (Sequence Diagram)
@@ -113,14 +118,14 @@ sequenceDiagram
 
     Note over Client,Server: Session State: Unestablished
 
-    Client->>Server: Message (Header: session_id=0, Body: [0x01] 'INIT')
-    Server->>Client: Message (Header: session_id=new_id, Body: [0x02] 'ACK')
-    Client->>Server: Message (Header: session_id=new_id, Body: [0x03] 'RDY')
+    Client->>Server: Message (Header: session_id=0, body_type=0x01 'INIT')
+    Server->>Client: Message (Header: session_id=new_id, body_type=0x02 'ACK')
+    Client->>Server: Message (Header: session_id=new_id, body_type=0x03 'RDY')
 
     Note over Client,Server: Session State: Established
 
-    Client->>Server: Message (Body: Application Data...)
-    Server->>Client: Message (Body: Application Data...)
+    Client->>Server: Message (Header: body_type=0x00, Body: Application Data...)
+    Server->>Client: Message (Header: body_type=0x00, Body: Application Data...)
 ```
 
 ## 3. 実装上の考慮事項 (Implementation Considerations)
@@ -131,8 +136,10 @@ sequenceDiagram
 
 1.  **不正なバージョン**: `Header` の `version` フィールドが `0x01` ではない。
 2.  **不正なハンドシェイクメッセージ**:
-    - セッションが**未確立**の状態で、`body_size` が `1` であるにもかかわらず、`Body` の内容が期待されるコマンド (`INIT`, `ACK`, `RDY` のいずれか) ではない。
-    - `session_id` が `0` の `ACK` または `RDY` メッセージを受信した。
+    - セッションが**未確立**の状態で、`body_type` が `0x00`（ユーザーメッセージ）のメッセージを受信した。
+    - セッションが**確立済み**の状態で、`body_type` が `0x01`、`0x02`、`0x03`（ハンドシェイクメッセージ）のメッセージを受信した。
+    - `session_id` が `0` の `ACK` (`body_type = 0x02`) または `RDY` (`body_type = 0x03`) メッセージを受信した。
+3.  **不正なbody_type**: `body_type` フィールドが `0x00`〜`0x03` の範囲外の値である。
 
 ### 3.2. 制約事項 (Constraints)
 
