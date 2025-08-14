@@ -56,6 +56,20 @@ juce::String Settings::getCwd() const
     return juce::File::getCurrentWorkingDirectory().getFullPathName();
 }
 
+bool Settings::getShowDevEditor() const
+{
+    if(_json.isObject())
+    {
+        juce::var showDevEditor = _json["showDevEditor"];
+
+        if(showDevEditor.isBool())
+        {
+            return showDevEditor;
+        }
+    }
+    return false;  // デフォルトはfalse
+}
+
 Settings Settings::initialize()
 {
     auto settingsFile = getSettingsFile();
@@ -79,6 +93,7 @@ juce::var Settings::createDefaultSettings()
     juce::DynamicObject::Ptr jsonObject = new juce::DynamicObject();
     jsonObject->setProperty("applicationPath", "");
     jsonObject->setProperty("cwd", "");
+    jsonObject->setProperty("showDevEditor", false);
     return juce::var(jsonObject);
 }
 

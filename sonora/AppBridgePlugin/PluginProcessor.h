@@ -31,13 +31,7 @@ class PluginProcessor : public AudioProcessor
 
     //==============================================================================
     AudioProcessorEditor *createEditor() override;
-    bool hasEditor() const override { 
-#ifdef DEBUG
-        return true;
-#else
-        return false;
-#endif
-    }
+    bool hasEditor() const override { return true; }
 
     //==============================================================================
     const String getName() const override { return "Sonora App Bridge"; }
@@ -65,6 +59,20 @@ class PluginProcessor : public AudioProcessor
         assert(_engine != nullptr && "AudioEngine is not initialized");
         return *_engine;
     }
+    
+    bool isConnected() const
+    {
+        return _client && _client->isConnected();
+    }
+    
+    void relaunchApp();
+    
+    // linkWithApp
+    /// 自身でアプリケーションをサブプロセスで起動し、アドレスを変えながら繰り返し接続試行する。
+    /// ただし、2回目以降のこのメソッド呼び出しは無視される。
+    void linkWithApp();
+    
+    Settings getSettings() const { return _settings; }
 
    private:
     std::unique_ptr<AudioEngine> _engine;
@@ -104,11 +112,6 @@ class PluginProcessor : public AudioProcessor
             finishedSignal.wait(-1);
         }
     }
-
-    // linkWithApp
-    /// 自身でアプリケーションをサブプロセスで起動し、アドレスを変えながら繰り返し接続試行する。
-    /// ただし、2回目以降のこのメソッド呼び出しは無視される。
-    void linkWithApp();
 
    private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginProcessor)

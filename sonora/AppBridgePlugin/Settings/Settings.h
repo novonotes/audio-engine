@@ -14,6 +14,7 @@ class Settings
     juce::String getCommand() const;
     juce::String getCwd() const;
     std::vector<juce::String> getArgs() const;
+    bool getShowDevEditor() const;
 
    private:
     juce::var _json;

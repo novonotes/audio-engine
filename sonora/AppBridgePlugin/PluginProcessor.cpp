@@ -6,6 +6,7 @@
 #include <random>
 
 #include "PluginDevEditor.h"
+#include "PluginEditor.h"
 #include "Settings/SettingsFile.h"
 #include "Utils/JsonUtils.h"
 
@@ -115,11 +116,7 @@ void PluginProcessor::processBlock(AudioBuffer<float> &buffer, MidiBuffer &midi)
 
 AudioProcessorEditor *PluginProcessor::createEditor()
 {
-#ifdef DEBUG
-    return new PluginDevEditor(*this);
-#else
-    return nullptr;
-#endif
+    return new PluginEditor(*this);
 }
 
 bool PluginProcessor::isBusesLayoutSupported(const BusesLayout &layouts) const
@@ -227,6 +224,16 @@ class UDSPathGenerator
     状態復元トークンは CoreServer 側で変更があるたびに、できるだけ早くプラグイン側に伝えて、常に同期しているようにするべき。
 */
 // clang-format on
+void PluginProcessor::relaunchApp()
+{
+    // 既存の接続をリセット
+    _linkCompleted.store(false);
+    _isLinking.store(false);
+    
+    // 新たに接続を試みる
+    linkWithApp();
+}
+
 void PluginProcessor::linkWithApp()
 {
     // すでにエンジン初期化済み
