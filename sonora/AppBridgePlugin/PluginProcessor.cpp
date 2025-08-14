@@ -42,6 +42,14 @@ PluginProcessor::PluginProcessor()
     }
 
     Logger::writeStartUpMessage(getName(), "v" + getVersion());
+
+    // UdpChannelを初期化（ポート0で自動割り当て）
+    bool udpStartResult = _udpChannel->startReceiving(0);
+    if (udpStartResult) {
+        Logger::info("UDP channel started on port " + String(_udpChannel->getBoundPort()));
+    } else {
+        Logger::error("Failed to start UDP channel");
+    }
 }
 
 PluginProcessor::~PluginProcessor()
