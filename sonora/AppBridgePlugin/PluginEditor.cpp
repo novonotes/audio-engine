@@ -65,6 +65,11 @@ PluginEditor::PluginEditor(PluginProcessor& p)
     }
     
     updateAppName();
+    
+    // 初期状態を設定
+    _statusLabel.setText("DISCONNECTED", dontSendNotification);
+    _statusLabel.setColour(Label::textColourId, Colour(0xff888888));
+    
     updateConnectionStatus();
     
     // 定期的に状態を更新
@@ -175,7 +180,8 @@ void PluginEditor::updateConnectionStatus()
         _connectionStatus = ConnectionStatus::Disconnected;
     }
     
-    if (oldStatus != _connectionStatus)
+    // 状態が変わった場合、またはラベルが空の場合に更新
+    if (oldStatus != _connectionStatus || _statusLabel.getText().isEmpty())
     {
         String statusText;
         Colour textColour;
