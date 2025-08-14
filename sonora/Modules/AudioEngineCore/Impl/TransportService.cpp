@@ -82,6 +82,9 @@ void TransportService::setLoopRange(const BeatPosition& loopStart,
     if(_kernel.isEngineInPlugin)
     {
         _synchroniser.setLoopRange(start, end);
+        // プラグインモードでもループを有効化
+        // TODO: enableLoop/disableLoop のメソッドを作るべき。
+        _synchroniser.enableLoop();  
         return;
     }
     auto& edit = _kernel.getEdit();
