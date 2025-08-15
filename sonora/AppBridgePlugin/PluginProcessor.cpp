@@ -9,6 +9,7 @@
 #include "PluginEditor.h"
 #include "Settings/SettingsFile.h"
 #include "Utils/JsonUtils.h"
+#include "Utils/ProcessLauncher.h"
 
 namespace novonotes
 {
@@ -357,21 +358,19 @@ void PluginProcessor::linkWithApp()
 
         while(_isConnecting.load())
         {
-            ChildProcess child;
-            
-            // Build full command array
-            StringArray fullCommand;
+            // Build command arguments (command は除く)
+            StringArray commandArgs;
             {
-                fullCommand.add(command);
                 for (juce::String sourcelArg : args)
                 {
                     // String interpolation: replace placeholders
                     juce::String interpolated = sourcelArg.replace("$SOCK_PATH", _sockPath);
-                    fullCommand.add(interpolated);
+                    commandArgs.add(interpolated);
                 }
             }
 
-            bool const isStarted = child.start(fullCommand, 0);
+            // ProcessLauncher を使用してdetachedモードで起動
+            bool const isStarted = ProcessLauncher::launchDetached(command, commandArgs, cwd);
             if(!isStarted)
             {
                 Logger::error("Failed to start application");
@@ -393,8 +392,9 @@ void PluginProcessor::linkWithApp()
                 // 初期化処理が Cancel されていないか確認。
                 if(!_isConnecting.load())
                 {
-                    // Cancel の場合、プロセスを明示的に終了
-                    child.kill();
+                    // Cancel の場合
+                    // 注: detachedプロセスなので、明示的にkillできない
+                    // BeatGen側でタイムアウト処理があることを期待
                     return;
                 }
             }
@@ -404,8 +404,9 @@ void PluginProcessor::linkWithApp()
                 break;
             }
 
-            // 接続できなかった場合、プロセスを明示的に終了
-            child.kill();
+            // 接続できなかった場合
+            // 注: detachedプロセスなので、明示的にkillできない
+            // BeatGen側で --auto-exit-time によるタイムアウトを期待
 
             // 現在の uds アドレスではアプリに接続できなかったので uds
             // を変更する
