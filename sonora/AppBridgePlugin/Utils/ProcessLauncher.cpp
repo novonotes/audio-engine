@@ -15,6 +15,7 @@ extern char **environ;
 #if JUCE_LINUX
 #include <unistd.h>
 #include <sys/wait.h>
+#include <fcntl.h>
 #endif
 
 namespace novonotes
