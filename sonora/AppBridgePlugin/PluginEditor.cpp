@@ -45,8 +45,16 @@ PluginEditor::PluginEditor(PluginProcessor& p)
     _relaunchButton.setVisible(false);
     _relaunchButton.setColour(TextButton::buttonColourId, Colour(0xff1a1a1a));
     _relaunchButton.setColour(TextButton::buttonOnColourId, Colour(0xff2a2a2a));
-    _relaunchButton.setColour(TextButton::textColourOffId, Colour(0xffcccccc));
+    _relaunchButton.setColour(TextButton::textColourOffId, Colour(0xff00d4aa));  // Connectedと同じシアングリーン
     addAndMakeVisible(_relaunchButton);
+    
+    // Cancelボタン
+    _cancelButton.onClick = [this] { onCancelClicked(); };
+    _cancelButton.setVisible(false);
+    _cancelButton.setColour(TextButton::buttonColourId, Colour(0xff1a1a1a));
+    _cancelButton.setColour(TextButton::buttonOnColourId, Colour(0xff2a2a2a));
+    _cancelButton.setColour(TextButton::textColourOffId, Colour(0xffcccccc));
+    addAndMakeVisible(_cancelButton);
     
     // 設定ボタン
     _settingsButton.setButtonText("Settings");
@@ -96,8 +104,11 @@ void PluginEditor::paint(Graphics& g)
         case PluginProcessor::ConnectionStatus::Connected:
             statusColour = Colour(0xff00d4aa);  // シアングリーン
             break;
-        case PluginProcessor::ConnectionStatus::Connecting:
-            statusColour = Colour(0xff888888);  // グレー（Disconnectedと同じ）
+        case PluginProcessor::ConnectionStatus::Linking:
+            statusColour = Colour(0xff888888);  // グレー
+            break;
+        case PluginProcessor::ConnectionStatus::Reconnecting:
+            statusColour = Colour(0xff888888);  // グレー
             break;
         case PluginProcessor::ConnectionStatus::Disconnected:
             statusColour = Colour(0xff888888);  // グレー
@@ -124,7 +135,8 @@ void PluginEditor::paint(Graphics& g)
         g.setColour(statusColour);
         g.fillEllipse(indicatorX - 4.5f, indicatorY - 4.5f, 9, 9);
     }
-    else if (connectionStatus == PluginProcessor::ConnectionStatus::Connecting)
+    else if (connectionStatus == PluginProcessor::ConnectionStatus::Linking ||
+             connectionStatus == PluginProcessor::ConnectionStatus::Reconnecting)
     {
         // 点滅中で表示状態の場合のみ描画
         if (_indicatorVisible)
@@ -164,12 +176,19 @@ void PluginEditor::resized()
     // ステータス
     _statusLabel.setBounds(bounds.removeFromTop(30));
     
-    // Relaunchボタン（未接続時のみ）
-    if (_processor.getConnectionStatus() == PluginProcessor::ConnectionStatus::Disconnected)
+    // Relaunch/Cancelボタン
+    auto status = _processor.getConnectionStatus();
+    if (status == PluginProcessor::ConnectionStatus::Disconnected)
     {
         bounds.removeFromTop(10);
         auto buttonArea = bounds.removeFromTop(30).reduced(100, 3);
         _relaunchButton.setBounds(buttonArea);
+    }
+    else if (status == PluginProcessor::ConnectionStatus::Reconnecting)
+    {
+        bounds.removeFromTop(10);
+        auto buttonArea = bounds.removeFromTop(30).reduced(100, 3);
+        _cancelButton.setBounds(buttonArea);
     }
     
     // Dev Editorが有効な場合、残りの領域に配置
@@ -184,16 +203,17 @@ void PluginEditor::timerCallback()
 {
     updateConnectionStatus();
     
-    // Connecting状態の場合、インジケーターを点滅させる
+    // Linking/Reconnecting状態の場合、インジケーターを点滅させる
     auto currentStatus = _processor.getConnectionStatus();
-    if (currentStatus == PluginProcessor::ConnectionStatus::Connecting)
+    if (currentStatus == PluginProcessor::ConnectionStatus::Linking ||
+        currentStatus == PluginProcessor::ConnectionStatus::Reconnecting)
     {
         _indicatorVisible = !_indicatorVisible;
         repaint();
     }
     else
     {
-        // Connecting以外の状態では常に表示
+        // Linking/Reconnecting以外の状態では常に表示
         if (!_indicatorVisible)
         {
             _indicatorVisible = true;
@@ -221,16 +241,25 @@ void PluginEditor::updateConnectionStatus()
                 statusText = "CONNECTED";
                 textColour = Colour(0xff00d4aa);
                 _relaunchButton.setVisible(false);
+                _cancelButton.setVisible(false);
                 break;
-            case PluginProcessor::ConnectionStatus::Connecting:
-                statusText = "CONNECTING...";
+            case PluginProcessor::ConnectionStatus::Linking:
+                statusText = "LINKING...";
                 textColour = Colour(0xff888888);
                 _relaunchButton.setVisible(false);
+                _cancelButton.setVisible(false);
+                break;
+            case PluginProcessor::ConnectionStatus::Reconnecting:
+                statusText = "RECONNECTING...";
+                textColour = Colour(0xff888888);
+                _relaunchButton.setVisible(false);
+                _cancelButton.setVisible(true);
                 break;
             case PluginProcessor::ConnectionStatus::Disconnected:
                 statusText = "DISCONNECTED";
                 textColour = Colour(0xff888888);
                 _relaunchButton.setVisible(true);
+                _cancelButton.setVisible(false);
                 break;
         }
         
@@ -278,6 +307,17 @@ void PluginEditor::onRelaunchClicked()
     
     // アプリを再起動
     _processor.relaunchApp();
+    
+    // 状態更新
+    updateConnectionStatus();
+}
+
+void PluginEditor::onCancelClicked()
+{
+    Logger::writeToLog("Cancel button clicked");
+    
+    // 再接続をキャンセル
+    _processor.cancelReconnection();
     
     // 状態更新
     updateConnectionStatus();

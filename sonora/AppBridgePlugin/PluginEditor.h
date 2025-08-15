@@ -23,19 +23,21 @@ private:
     void updateConnectionStatus();
     void updateAppName();
     void onRelaunchClicked();
+    void onCancelClicked();
     void onSettingsClicked();
     String getAppNameFromCommand(const String& command);
 
     PluginProcessor& _processor;
     
     String _currentAppName;
-    bool _indicatorVisible = true;  // Connecting時の点滅用
+    bool _indicatorVisible = true;  // Linking/Reconnecting時の点滅用
     
     Label _titleLabel;
     Label _versionLabel;
     Label _appNameLabel;
     Label _statusLabel;
     TextButton _relaunchButton{"Relaunch"};
+    TextButton _cancelButton{"Cancel"};
     TextButton _settingsButton{"Settings"};
     
     std::unique_ptr<Component> _debugView;

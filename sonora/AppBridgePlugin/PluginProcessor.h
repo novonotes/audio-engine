@@ -21,7 +21,8 @@ class PluginProcessor : public AudioProcessor, public Timer
     enum class ConnectionStatus
     {
         Disconnected,
-        Connecting,
+        Linking,        // 新規にアプリを起動して接続を試行中
+        Reconnecting,   // 起動済みのアプリへの再接続を試行中
         Connected
     };
     //==============================================================================
@@ -70,6 +71,7 @@ class PluginProcessor : public AudioProcessor, public Timer
     ConnectionStatus getConnectionStatus() const;
     
     void relaunchApp();
+    void cancelReconnection();  // 再接続をキャンセル
     
     Settings getSettings() const { return _settings; }
     
@@ -93,8 +95,10 @@ class PluginProcessor : public AudioProcessor, public Timer
 
     juce::String _sockPath = "";
 
-    // 接続処理中かどうか（初期化または再接続）
-    std::atomic<bool> _isConnecting{false};
+    // 新規アプリ起動＆接続処理中かどうか（linkWithApp()実行中）
+    std::atomic<bool> _isLinking{false};
+    // 既存アプリへの再接続処理中かどうか（attemptReconnection()実行中）
+    std::atomic<bool> _isReconnecting{false};
     
     // 再接続を試みるスレッド
     CallbackThread _reconnectionThread;

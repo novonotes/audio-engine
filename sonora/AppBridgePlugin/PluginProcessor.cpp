@@ -67,14 +67,14 @@ PluginProcessor::~PluginProcessor()
     if(_thread.isThreadRunning())
     {
         // Engine 初期化処理をキャンセル
-        _isConnecting.store(false);
+        _isLinking.store(false);
         _thread.stopThread(3000);
     }
     
     // 再接続スレッドの停止
     if(_reconnectionThread.isThreadRunning())
     {
-        _isConnecting.store(false);
+        _isLinking.store(false);
         _reconnectionThread.stopThread(3000);
     }
 
@@ -251,15 +251,33 @@ void PluginProcessor::relaunchApp()
     linkWithApp();
 }
 
+void PluginProcessor::cancelReconnection()
+{
+    Logger::info("Cancelling reconnection");
+    
+    // 再接続フラグをクリア
+    _isReconnecting.store(false);
+    
+    // 再接続スレッドを終了
+    if(_reconnectionThread.isThreadRunning())
+    {
+        _reconnectionThread.signalThreadShouldExit();
+        _reconnectionThread.waitForThreadToExit(1000);
+    }
+}
+
 void PluginProcessor::attemptReconnection()
 {
-    // すでに再接続中の場合は何もしない
-    if(_isConnecting.load())
+    // リンク中に再接続が呼ばれるのはプログラマーのミス
+    jassert(!_isLinking.load());
+    
+    // すでに再接続中の場合は何もしない（冪等性）
+    if(_isReconnecting.load())
     {
         return;
     }
     
-    _isConnecting.store(true);
+    _isReconnecting.store(true);  // 再接続フラグのみセット
     
     if(_reconnectionThread.isThreadRunning())
     {
@@ -269,16 +287,16 @@ void PluginProcessor::attemptReconnection()
     _reconnectionThread.callback = [=, this](Thread &t) {
         Logger::info("Starting reconnection attempt");
         
-        const int64 reconnectionTimeout = 10000; // 10秒
+        const int64 reconnectionTimeout = 15000; // 15秒
         const int reconnectionInterval = 1000;   // 1秒ごとに再試行
         
-        while(_isConnecting.load() && !t.threadShouldExit())
+        while(_isReconnecting.load() && !t.threadShouldExit())
         {
             // タイムアウトチェック
             int64 elapsedTime = Time::currentTimeMillis() - _disconnectionTime.load();
             if(elapsedTime > reconnectionTimeout)
             {
-                Logger::info("Reconnection timeout reached (10 seconds)");
+                Logger::info("Reconnection timeout reached (15 seconds)");
                 break;
             }
             
@@ -289,7 +307,7 @@ void PluginProcessor::attemptReconnection()
                 if(_client->isConnected())
                 {
                     Logger::info("Successfully reconnected to application");
-                    _isConnecting.store(false);
+                    _isReconnecting.store(false);
                     return;
                 }
             }
@@ -299,7 +317,7 @@ void PluginProcessor::attemptReconnection()
         
         // 再接続失敗
         Logger::info("Failed to reconnect within timeout period");
-        _isConnecting.store(false);
+        _isReconnecting.store(false);
     };
     
     _reconnectionThread.startThread();
@@ -315,13 +333,13 @@ void PluginProcessor::linkWithApp()
 
     // 前回のバックグラウンド処理が終わる前に新たに initializeEngine()
     // が呼び出されてきたとき
-    if(_isConnecting.load())
+    if(_isLinking.load())
     {
         // 前回のバックグラウンド処理がそのまま動いているはずなのでなにもしない
         return;
     }
 
-    _isConnecting.store(true);
+    _isLinking.store(true);
 
     if(_thread.isThreadRunning())
     {
@@ -356,7 +374,7 @@ void PluginProcessor::linkWithApp()
             _sockPath = udsGen.generate();
         }
 
-        while(_isConnecting.load())
+        while(_isLinking.load())
         {
             // Build command arguments (command は除く)
             StringArray commandArgs;
@@ -390,7 +408,7 @@ void PluginProcessor::linkWithApp()
                 Thread::sleep(1000);
 
                 // 初期化処理が Cancel されていないか確認。
-                if(!_isConnecting.load())
+                if(!_isLinking.load())
                 {
                     // Cancel の場合
                     // 注: detachedプロセスなので、明示的にkillできない
@@ -413,7 +431,7 @@ void PluginProcessor::linkWithApp()
             _sockPath = udsGen.generate();
         }
 
-        _isConnecting.store(false);
+        _isLinking.store(false);
     };
 
     _thread.startThread();
@@ -421,16 +439,22 @@ void PluginProcessor::linkWithApp()
 
 PluginProcessor::ConnectionStatus PluginProcessor::getConnectionStatus() const
 {
-    // 接続処理中の場合
-    if(_isConnecting.load())
-    {
-        return ConnectionStatus::Connecting;
-    }
-    
     // 実際の接続状態を確認
     if(_client && _client->isConnected())
     {
         return ConnectionStatus::Connected;
+    }
+    
+    // 再接続中の場合
+    if(_isReconnecting.load())
+    {
+        return ConnectionStatus::Reconnecting;
+    }
+    
+    // リンク中の場合（アプリ起動＆接続）
+    if(_isLinking.load())
+    {
+        return ConnectionStatus::Linking;
     }
     
     return ConnectionStatus::Disconnected;
@@ -438,8 +462,8 @@ PluginProcessor::ConnectionStatus PluginProcessor::getConnectionStatus() const
 
 void PluginProcessor::timerCallback()
 {
-    // 接続中でない場合はチェック不要
-    if(_isConnecting.load())
+    // リンク中または再接続中の場合はチェック不要
+    if(_isLinking.load() || _isReconnecting.load())
     {
         return;
     }
