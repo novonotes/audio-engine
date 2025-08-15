@@ -15,9 +15,15 @@ using namespace juce;
 
 namespace novonotes
 {
-class PluginProcessor : public AudioProcessor
+class PluginProcessor : public AudioProcessor, public Timer
 {
    public:
+    enum class ConnectionStatus
+    {
+        Disconnected,
+        Connecting,
+        Connected
+    };
     //==============================================================================
     PluginProcessor();
     ~PluginProcessor() override;
@@ -60,21 +66,24 @@ class PluginProcessor : public AudioProcessor
         return *_engine;
     }
     
-    bool isConnected() const
-    {
-        return _client && _client->isConnected();
-    }
+    // 現在の接続状態を取得
+    ConnectionStatus getConnectionStatus() const;
     
     void relaunchApp();
     
+    Settings getSettings() const { return _settings; }
+    
+    // Timer callback for connection monitoring
+    void timerCallback() override;
+
+   private:
     // linkWithApp
     /// 自身でアプリケーションをサブプロセスで起動し、アドレスを変えながら繰り返し接続試行する。
     /// ただし、2回目以降のこのメソッド呼び出しは無視される。
     void linkWithApp();
     
-    Settings getSettings() const { return _settings; }
-
-   private:
+    // 再接続を試みる
+    void attemptReconnection();
     std::unique_ptr<AudioEngine> _engine;
     std::unique_ptr<ProtoMessageHandler> _handler;
     std::unique_ptr<SocketClient> _client;
@@ -84,12 +93,14 @@ class PluginProcessor : public AudioProcessor
 
     juce::String _sockPath = "";
 
-    // エンジンとアプリのリンクが完了したかどうか。
-    std::atomic<bool> _linkCompleted = false;
-
-    // エンジンとアプリのリンク処理が現在実行中かどうか。
-    // false を代入することでキャンセル可能。
-    std::atomic<bool> _isLinking = false;
+    // 接続処理中かどうか（初期化または再接続）
+    std::atomic<bool> _isConnecting{false};
+    
+    // 再接続を試みるスレッド
+    CallbackThread _reconnectionThread;
+    
+    // 最後に接続が切れた時刻（再接続タイムアウト管理用）
+    std::atomic<int64> _disconnectionTime = 0;
 
     CallbackThread _thread;
 

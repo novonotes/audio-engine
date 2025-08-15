@@ -20,13 +20,6 @@ public:
     void timerCallback() override;
 
 private:
-    enum class ConnectionStatus
-    {
-        Disconnected,
-        Connecting,
-        Connected
-    };
-
     void updateConnectionStatus();
     void updateAppName();
     void onRelaunchClicked();
@@ -35,8 +28,8 @@ private:
 
     PluginProcessor& _processor;
     
-    ConnectionStatus _connectionStatus = ConnectionStatus::Disconnected;
     String _currentAppName;
+    bool _indicatorVisible = true;  // Connecting時の点滅用
     
     Label _titleLabel;
     Label _versionLabel;

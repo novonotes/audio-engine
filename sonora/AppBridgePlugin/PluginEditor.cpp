@@ -67,13 +67,10 @@ PluginEditor::PluginEditor(PluginProcessor& p)
     updateAppName();
     
     // 初期状態を設定
-    _statusLabel.setText("DISCONNECTED", dontSendNotification);
-    _statusLabel.setColour(Label::textColourId, Colour(0xff888888));
-    
     updateConnectionStatus();
     
-    // 定期的に状態を更新
-    startTimerHz(2);
+    // 定期的に状態を更新（1秒ごと）
+    startTimerHz(1);
 }
 
 PluginEditor::~PluginEditor()
@@ -93,15 +90,16 @@ void PluginEditor::paint(Graphics& g)
     
     // 接続状態に応じた色
     Colour statusColour;
-    switch (_connectionStatus)
+    auto connectionStatus = _processor.getConnectionStatus();
+    switch (connectionStatus)
     {
-        case ConnectionStatus::Connected:
+        case PluginProcessor::ConnectionStatus::Connected:
             statusColour = Colour(0xff00d4aa);  // シアングリーン
             break;
-        case ConnectionStatus::Connecting:
-            statusColour = Colour(0xffffb700);  // アンバー
+        case PluginProcessor::ConnectionStatus::Connecting:
+            statusColour = Colour(0xff888888);  // グレー（Disconnectedと同じ）
             break;
-        case ConnectionStatus::Disconnected:
+        case PluginProcessor::ConnectionStatus::Disconnected:
             statusColour = Colour(0xff888888);  // グレー
             break;
     }
@@ -115,13 +113,37 @@ void PluginEditor::paint(Graphics& g)
     auto indicatorX = centerX - (textWidth * 0.5f) - 18.0f;
     auto indicatorY = 95.0f;  // 少し下に配置
     
-    // グロー効果（1.5倍サイズ）
-    g.setColour(statusColour.withAlpha(0.15f));
-    g.fillEllipse(indicatorX - 9, indicatorY - 9, 18, 18);
-    
-    // メインドット（1.5倍サイズ）
-    g.setColour(statusColour);
-    g.fillEllipse(indicatorX - 4.5f, indicatorY - 4.5f, 9, 9);
+    // 接続状態に応じてインジケーターを描画
+    if (connectionStatus == PluginProcessor::ConnectionStatus::Connected)
+    {
+        // グロー効果（1.5倍サイズ）
+        g.setColour(statusColour.withAlpha(0.15f));
+        g.fillEllipse(indicatorX - 9, indicatorY - 9, 18, 18);
+        
+        // メインドット（1.5倍サイズ）
+        g.setColour(statusColour);
+        g.fillEllipse(indicatorX - 4.5f, indicatorY - 4.5f, 9, 9);
+    }
+    else if (connectionStatus == PluginProcessor::ConnectionStatus::Connecting)
+    {
+        // 点滅中で表示状態の場合のみ描画
+        if (_indicatorVisible)
+        {
+            // グロー効果（1.5倍サイズ）
+            g.setColour(statusColour.withAlpha(0.15f));
+            g.fillEllipse(indicatorX - 9, indicatorY - 9, 18, 18);
+            
+            // メインドット（1.5倍サイズ）
+            g.setColour(statusColour);
+            g.fillEllipse(indicatorX - 4.5f, indicatorY - 4.5f, 9, 9);
+        }
+    }
+    else // Disconnected
+    {
+        // メインドット（1.5倍サイズ、グローなし）
+        g.setColour(statusColour);
+        g.fillEllipse(indicatorX - 4.5f, indicatorY - 4.5f, 9, 9);
+    }
 }
 
 void PluginEditor::resized()
@@ -143,7 +165,7 @@ void PluginEditor::resized()
     _statusLabel.setBounds(bounds.removeFromTop(30));
     
     // Relaunchボタン（未接続時のみ）
-    if (_connectionStatus == ConnectionStatus::Disconnected)
+    if (_processor.getConnectionStatus() == PluginProcessor::ConnectionStatus::Disconnected)
     {
         bounds.removeFromTop(10);
         auto buttonArea = bounds.removeFromTop(30).reduced(100, 3);
@@ -161,44 +183,51 @@ void PluginEditor::resized()
 void PluginEditor::timerCallback()
 {
     updateConnectionStatus();
+    
+    // Connecting状態の場合、インジケーターを点滅させる
+    auto currentStatus = _processor.getConnectionStatus();
+    if (currentStatus == PluginProcessor::ConnectionStatus::Connecting)
+    {
+        _indicatorVisible = !_indicatorVisible;
+        repaint();
+    }
+    else
+    {
+        // Connecting以外の状態では常に表示
+        if (!_indicatorVisible)
+        {
+            _indicatorVisible = true;
+            repaint();
+        }
+    }
 }
 
 void PluginEditor::updateConnectionStatus()
 {
-    ConnectionStatus oldStatus = _connectionStatus;
+    static PluginProcessor::ConnectionStatus lastStatus = PluginProcessor::ConnectionStatus::Disconnected;
     
     // 実際の接続状態を取得
-    bool connected = _processor.isConnected();
-    
-    if (connected)
-    {
-        _connectionStatus = ConnectionStatus::Connected;
-    }
-    else
-    {
-        // TODO: 接続中の状態を適切に判定する方法を実装
-        _connectionStatus = ConnectionStatus::Disconnected;
-    }
+    auto currentStatus = _processor.getConnectionStatus();
     
     // 状態が変わった場合、またはラベルが空の場合に更新
-    if (oldStatus != _connectionStatus || _statusLabel.getText().isEmpty())
+    if (lastStatus != currentStatus || _statusLabel.getText().isEmpty())
     {
         String statusText;
         Colour textColour;
         
-        switch (_connectionStatus)
+        switch (currentStatus)
         {
-            case ConnectionStatus::Connected:
+            case PluginProcessor::ConnectionStatus::Connected:
                 statusText = "CONNECTED";
                 textColour = Colour(0xff00d4aa);
                 _relaunchButton.setVisible(false);
                 break;
-            case ConnectionStatus::Connecting:
+            case PluginProcessor::ConnectionStatus::Connecting:
                 statusText = "CONNECTING...";
-                textColour = Colour(0xffffb700);
+                textColour = Colour(0xff888888);
                 _relaunchButton.setVisible(false);
                 break;
-            case ConnectionStatus::Disconnected:
+            case PluginProcessor::ConnectionStatus::Disconnected:
                 statusText = "DISCONNECTED";
                 textColour = Colour(0xff888888);
                 _relaunchButton.setVisible(true);
@@ -208,6 +237,7 @@ void PluginEditor::updateConnectionStatus()
         _statusLabel.setText(statusText, dontSendNotification);
         _statusLabel.setColour(Label::textColourId, textColour);
         
+        lastStatus = currentStatus;
         resized();
         repaint();
     }
@@ -246,12 +276,11 @@ void PluginEditor::onRelaunchClicked()
 {
     Logger::writeToLog("Relaunch button clicked");
     
-    // 接続中状態にする
-    _connectionStatus = ConnectionStatus::Connecting;
-    updateConnectionStatus();
-    
     // アプリを再起動
     _processor.relaunchApp();
+    
+    // 状態更新
+    updateConnectionStatus();
 }
 
 void PluginEditor::onSettingsClicked()

@@ -21,6 +21,7 @@ PluginProcessor::PluginProcessor()
                          .withOutput("Output", AudioChannelSet::stereo()))
     , _settings(Settings::initialize())
     , _thread("EngineInitializationThread")
+    , _reconnectionThread("ReconnectionThread")
 {
     numInstances++;
 
@@ -51,16 +52,29 @@ PluginProcessor::PluginProcessor()
     } else {
         Logger::error("Failed to start UDP channel");
     }
+    
+    // 接続状態を監視するタイマーを開始（1秒ごと）
+    startTimerHz(1);
 }
 
 PluginProcessor::~PluginProcessor()
 {
+    // Timerを停止
+    stopTimer();
+    
     // Thread の停止
     if(_thread.isThreadRunning())
     {
         // Engine 初期化処理をキャンセル
-        _isLinking.store(false);
+        _isConnecting.store(false);
         _thread.stopThread(3000);
+    }
+    
+    // 再接続スレッドの停止
+    if(_reconnectionThread.isThreadRunning())
+    {
+        _isConnecting.store(false);
+        _reconnectionThread.stopThread(3000);
     }
 
     // 最後のインスタンスを削除するタイミングで Logger のインスタンスを削除
@@ -91,7 +105,7 @@ void PluginProcessor::processBlock(AudioBuffer<float> &buffer, MidiBuffer &midi)
     // 非正規化数の計算はCPU負荷が高く、パフォーマンスに悪影響を与えるため、これを防止。
     ScopedNoDenormals noDenormals;
 
-    if(!_linkCompleted.load())
+    if(!_client || !_client->isConnected())
     {
         return;
     }
@@ -227,30 +241,86 @@ class UDSPathGenerator
 void PluginProcessor::relaunchApp()
 {
     // 既存の接続をリセット
-    _linkCompleted.store(false);
-    _isLinking.store(false);
+    if(_client && _client->isConnected())
+    {
+        // 必要に応じて接続を閉じる処理
+    }
     
     // 新たに接続を試みる
     linkWithApp();
 }
 
+void PluginProcessor::attemptReconnection()
+{
+    // すでに再接続中の場合は何もしない
+    if(_isConnecting.load())
+    {
+        return;
+    }
+    
+    _isConnecting.store(true);
+    
+    if(_reconnectionThread.isThreadRunning())
+    {
+        _reconnectionThread.waitForThreadToExit(1000);
+    }
+    
+    _reconnectionThread.callback = [=, this](Thread &t) {
+        Logger::info("Starting reconnection attempt");
+        
+        const int64 reconnectionTimeout = 10000; // 10秒
+        const int reconnectionInterval = 1000;   // 1秒ごとに再試行
+        
+        while(_isConnecting.load() && !t.threadShouldExit())
+        {
+            // タイムアウトチェック
+            int64 elapsedTime = Time::currentTimeMillis() - _disconnectionTime.load();
+            if(elapsedTime > reconnectionTimeout)
+            {
+                Logger::info("Reconnection timeout reached (10 seconds)");
+                break;
+            }
+            
+            // 既存のソケットパスで再接続を試みる
+            if(!_sockPath.isEmpty())
+            {
+                _client->openConnection(_sockPath.toStdString());
+                if(_client->isConnected())
+                {
+                    Logger::info("Successfully reconnected to application");
+                    _isConnecting.store(false);
+                    return;
+                }
+            }
+            
+            Thread::sleep(reconnectionInterval);
+        }
+        
+        // 再接続失敗
+        Logger::info("Failed to reconnect within timeout period");
+        _isConnecting.store(false);
+    };
+    
+    _reconnectionThread.startThread();
+}
+
 void PluginProcessor::linkWithApp()
 {
     // すでにエンジン初期化済み
-    if(_linkCompleted.load())
+    if(_client && _client->isConnected())
     {
         return;
     }
 
     // 前回のバックグラウンド処理が終わる前に新たに initializeEngine()
     // が呼び出されてきたとき
-    if(_isLinking.load())
+    if(_isConnecting.load())
     {
         // 前回のバックグラウンド処理がそのまま動いているはずなのでなにもしない
         return;
     }
 
-    _isLinking.store(true);
+    _isConnecting.store(true);
 
     if(_thread.isThreadRunning())
     {
@@ -285,7 +355,7 @@ void PluginProcessor::linkWithApp()
             _sockPath = udsGen.generate();
         }
 
-        while(_isLinking.load())
+        while(_isConnecting.load())
         {
             ChildProcess child;
             
@@ -321,7 +391,7 @@ void PluginProcessor::linkWithApp()
                 Thread::sleep(1000);
 
                 // 初期化処理が Cancel されていないか確認。
-                if(_isLinking.load() == false)
+                if(!_isConnecting.load())
                 {
                     // Cancel の場合、プロセスを明示的に終了
                     child.kill();
@@ -342,11 +412,50 @@ void PluginProcessor::linkWithApp()
             _sockPath = udsGen.generate();
         }
 
-        _linkCompleted.store(true);
-        _isLinking.store(false);
+        _isConnecting.store(false);
     };
 
     _thread.startThread();
+}
+
+PluginProcessor::ConnectionStatus PluginProcessor::getConnectionStatus() const
+{
+    // 接続処理中の場合
+    if(_isConnecting.load())
+    {
+        return ConnectionStatus::Connecting;
+    }
+    
+    // 実際の接続状態を確認
+    if(_client && _client->isConnected())
+    {
+        return ConnectionStatus::Connected;
+    }
+    
+    return ConnectionStatus::Disconnected;
+}
+
+void PluginProcessor::timerCallback()
+{
+    // 接続中でない場合はチェック不要
+    if(_isConnecting.load())
+    {
+        return;
+    }
+    
+    // 前回接続していたが現在切断されている場合
+    static bool wasConnected = false;
+    bool isConnected = _client && _client->isConnected();
+    
+    if(wasConnected && !isConnected)
+    {
+        // 切断を検知
+        Logger::info("Connection lost, attempting automatic reconnection...");
+        _disconnectionTime.store(Time::currentTimeMillis());
+        attemptReconnection();
+    }
+    
+    wasConnected = isConnected;
 }
 
 }  // namespace novonotes
