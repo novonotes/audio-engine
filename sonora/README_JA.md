@@ -1,4 +1,4 @@
-# AudioEngine Cpp
+# Sonora
 
 ## Building from Source
 

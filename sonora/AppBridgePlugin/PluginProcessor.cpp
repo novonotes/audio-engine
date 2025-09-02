@@ -340,6 +340,7 @@ void PluginProcessor::linkWithApp()
     }
 
     _isLinking.store(true);
+    _lastFailure.store(LinkFailureReason::None);
 
     if(_thread.isThreadRunning())
     {
@@ -358,10 +359,14 @@ void PluginProcessor::linkWithApp()
         auto const cwd = _settings.getCwd();
         auto const command = _settings.getCommand();
         auto const args = _settings.getArgs();
+        const int64 startTime = Time::currentTimeMillis();
+        const int64 linkTimeoutMs = 30000; // 全体のリンク試行タイムアウト（30秒）
         
         if (command.isEmpty())
         {
             Logger::error("Abort linking: empty application path.");
+            _lastFailure.store(LinkFailureReason::InvalidConfig);
+            _isLinking.store(false);
             return;
         }
 
@@ -376,6 +381,14 @@ void PluginProcessor::linkWithApp()
 
         while(_isLinking.load())
         {
+            // 全体タイムアウト判定
+            if (Time::currentTimeMillis() - startTime > linkTimeoutMs)
+            {
+                Logger::error("Linking aborted: overall timeout reached.");
+                _lastFailure.store(LinkFailureReason::Timeout);
+                _isLinking.store(false);
+                return;
+            }
             // Build command arguments (command は除く)
             StringArray commandArgs;
             {
@@ -392,6 +405,8 @@ void PluginProcessor::linkWithApp()
             if(!isStarted)
             {
                 Logger::error("Failed to start application");
+                _lastFailure.store(LinkFailureReason::LaunchFailed);
+                _isLinking.store(false);
                 return;
             }
 
@@ -413,6 +428,15 @@ void PluginProcessor::linkWithApp()
                     // Cancel の場合
                     // 注: detachedプロセスなので、明示的にkillできない
                     // BeatGen側でタイムアウト処理があることを期待
+                    return;
+                }
+
+                // 全体タイムアウトの再チェック（待機ループ内）
+                if (Time::currentTimeMillis() - startTime > linkTimeoutMs)
+                {
+                    Logger::error("Linking aborted during wait: overall timeout reached.");
+                    _lastFailure.store(LinkFailureReason::Timeout);
+                    _isLinking.store(false);
                     return;
                 }
             }

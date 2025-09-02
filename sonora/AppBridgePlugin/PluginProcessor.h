@@ -25,6 +25,14 @@ class PluginProcessor : public AudioProcessor, public Timer
         Reconnecting,   // 起動済みのアプリへの再接続を試行中
         Connected
     };
+
+    enum class LinkFailureReason
+    {
+        None,
+        InvalidConfig,   // 設定ファイルがない/コマンドが空など
+        LaunchFailed,    // サブプロセス起動失敗
+        Timeout          // 規定時間内に接続できず
+    };
     //==============================================================================
     PluginProcessor();
     ~PluginProcessor() override;
@@ -69,6 +77,11 @@ class PluginProcessor : public AudioProcessor, public Timer
     
     // 現在の接続状態を取得
     ConnectionStatus getConnectionStatus() const;
+
+    // GUI 向け: 直近のリンク失敗理由を問い合わせ
+    bool needsUserConfig() const { return _lastFailure.load() == LinkFailureReason::InvalidConfig; }
+    LinkFailureReason getLastFailureReason() const { return _lastFailure.load(); }
+    void clearLastFailure() { _lastFailure.store(LinkFailureReason::None); }
     
     void relaunchApp();
     void cancelReconnection();  // 再接続をキャンセル
@@ -107,6 +120,9 @@ class PluginProcessor : public AudioProcessor, public Timer
     std::atomic<int64> _disconnectionTime = 0;
 
     CallbackThread _thread;
+
+    // 直近のリンク失敗理由（UI 表示用）
+    std::atomic<LinkFailureReason> _lastFailure{ LinkFailureReason::None };
 
     template <typename Function>
     void callFunctionOnMessageThread(Function &&func)

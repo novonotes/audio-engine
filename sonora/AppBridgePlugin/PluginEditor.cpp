@@ -40,6 +40,13 @@ PluginEditor::PluginEditor(PluginProcessor& p)
     _statusLabel.setJustificationType(Justification::centred);
     addAndMakeVisible(_statusLabel);
     
+    // ヒントラベル（エラー/未設定時に表示）
+    _hintLabel.setFont(Font("Helvetica Neue", 13.0f, Font::plain));
+    _hintLabel.setJustificationType(Justification::centred);
+    _hintLabel.setColour(Label::textColourId, Colour(0xffb0b0b0));
+    _hintLabel.setVisible(false);
+    addAndMakeVisible(_hintLabel);
+    
     // Relaunchボタン
     _relaunchButton.onClick = [this] { onRelaunchClicked(); };
     _relaunchButton.setVisible(false);
@@ -176,6 +183,13 @@ void PluginEditor::resized()
     // ステータス
     _statusLabel.setBounds(bounds.removeFromTop(30));
     
+    // ヒント（必要時のみ表示）
+    if (_hintLabel.isVisible())
+    {
+        bounds.removeFromTop(4);
+        _hintLabel.setBounds(bounds.removeFromTop(30));
+    }
+    
     // Relaunch/Cancelボタン
     auto status = _processor.getConnectionStatus();
     if (status == PluginProcessor::ConnectionStatus::Disconnected)
@@ -242,27 +256,57 @@ void PluginEditor::updateConnectionStatus()
                 textColour = Colour(0xff00d4aa);
                 _relaunchButton.setVisible(false);
                 _cancelButton.setVisible(false);
+                _hintLabel.setVisible(false);
                 break;
             case PluginProcessor::ConnectionStatus::Linking:
                 statusText = "LINKING...";
                 textColour = Colour(0xff888888);
                 _relaunchButton.setVisible(false);
                 _cancelButton.setVisible(false);
+                _hintLabel.setVisible(false);
                 break;
             case PluginProcessor::ConnectionStatus::Reconnecting:
                 statusText = "RECONNECTING...";
                 textColour = Colour(0xff888888);
                 _relaunchButton.setVisible(false);
                 _cancelButton.setVisible(true);
+                _hintLabel.setVisible(false);
                 break;
             case PluginProcessor::ConnectionStatus::Disconnected:
                 statusText = "DISCONNECTED";
                 textColour = Colour(0xff888888);
-                _relaunchButton.setVisible(true);
+                // リンク失敗理由に応じてヒント表示・ボタン制御
+                {
+                    auto reason = _processor.getLastFailureReason();
+                    if (reason == PluginProcessor::LinkFailureReason::InvalidConfig)
+                    {
+                        statusText = "NOT CONFIGURED";
+                        _hintLabel.setText("No configuration found. Open Settings to configure.", dontSendNotification);
+                        _hintLabel.setVisible(true);
+                        _relaunchButton.setVisible(false);
+                    }
+                    else if (reason == PluginProcessor::LinkFailureReason::Timeout)
+                    {
+                        _hintLabel.setText("Failed to connect. Check Settings and try again.", dontSendNotification);
+                        _hintLabel.setVisible(true);
+                        _relaunchButton.setVisible(true);
+                    }
+                    else if (reason == PluginProcessor::LinkFailureReason::LaunchFailed)
+                    {
+                        _hintLabel.setText("Failed to launch application. Verify the path in Settings.", dontSendNotification);
+                        _hintLabel.setVisible(true);
+                        _relaunchButton.setVisible(true);
+                    }
+                    else
+                    {
+                        _hintLabel.setVisible(false);
+                        _relaunchButton.setVisible(true);
+                    }
+                }
                 _cancelButton.setVisible(false);
                 break;
         }
-        
+
         _statusLabel.setText(statusText, dontSendNotification);
         _statusLabel.setColour(Label::textColourId, textColour);
         
@@ -307,6 +351,7 @@ void PluginEditor::onRelaunchClicked()
     
     // アプリを再起動
     _processor.relaunchApp();
+    _processor.clearLastFailure();
     
     // 状態更新
     updateConnectionStatus();

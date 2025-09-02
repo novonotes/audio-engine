@@ -91,8 +91,10 @@ Settings Settings::initialize()
 juce::var Settings::createDefaultSettings()
 {
     juce::DynamicObject::Ptr jsonObject = new juce::DynamicObject();
-    jsonObject->setProperty("applicationPath", "");
+    // README に合わせたデフォルトキー名
+    jsonObject->setProperty("command", "");
     jsonObject->setProperty("cwd", "");
+    jsonObject->setProperty("args", juce::var(juce::Array<juce::var>()));
     jsonObject->setProperty("showDevEditor", false);
     return juce::var(jsonObject);
 }

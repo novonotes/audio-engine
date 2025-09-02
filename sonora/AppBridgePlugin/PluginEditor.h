@@ -36,6 +36,7 @@ private:
     Label _versionLabel;
     Label _appNameLabel;
     Label _statusLabel;
+    Label _hintLabel;
     TextButton _relaunchButton{"Relaunch"};
     TextButton _cancelButton{"Cancel"};
     TextButton _settingsButton{"Settings"};
