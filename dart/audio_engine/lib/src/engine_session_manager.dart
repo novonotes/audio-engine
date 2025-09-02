@@ -138,9 +138,9 @@ class EngineSessionManager {
       final engine = UnmanagedEngineSession();
       await engine.onConnected(connection);
       _addSession(engine);
-      connection.state.listen((newState) {
+      connection.state.listen((newState) async {
         if (newState == nam.ConnectionState.disconnected) {
-          endSession(engine.sessionId);
+          await endSession(engine.sessionId);
         }
       });
       return;
@@ -149,9 +149,9 @@ class EngineSessionManager {
     // 紐づける先の SubprocessEngine が見つかった場合は、
     // その SubprocesEngine の onConnected を呼び出し。
     await engineToBind.onConnected(connection);
-    connection.state.listen((newState) {
+    connection.state.listen((newState) async {
       if (newState == nam.ConnectionState.disconnected) {
-        endSession(engineToBind.sessionId);
+        await endSession(engineToBind.sessionId);
       }
     });
   }
