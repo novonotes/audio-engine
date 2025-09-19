@@ -119,6 +119,14 @@ class PluginProcessor : public AudioProcessor, public Timer
     // 最後に接続が切れた時刻（再接続タイムアウト管理用）
     std::atomic<int64> _disconnectionTime = 0;
 
+    // prepareToPlayの状態を保存
+    double _currentSampleRate = 44100.0;
+    int _currentBlockSize = 512;
+    bool _isPrepared = false;
+
+    // エンジン再構築中はオーディオ処理を停止
+    std::atomic<bool> _isReconstructing{false};
+
     CallbackThread _thread;
 
     // 直近のリンク失敗理由（UI 表示用）

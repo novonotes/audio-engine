@@ -90,6 +90,11 @@ PluginProcessor::~PluginProcessor()
 
 void PluginProcessor::prepareToPlay(double sampleRate, int expectedBlockSize)
 {
+    // 現在の状態を保存
+    _currentSampleRate = sampleRate;
+    _currentBlockSize = expectedBlockSize;
+    _isPrepared = true;
+
     // On Linux the plugin and prepareToPlay may not be called on the
     // message thread. Engine needs to be created on the message thread so
     // we'll do that now
@@ -106,8 +111,16 @@ void PluginProcessor::processBlock(AudioBuffer<float> &buffer, MidiBuffer &midi)
     // 非正規化数の計算はCPU負荷が高く、パフォーマンスに悪影響を与えるため、これを防止。
     ScopedNoDenormals noDenormals;
 
-    if(!_client || !_client->isConnected())
+    // エンジン再構築中はオーディオ処理をスキップ（クラッシュ防止）
+    if(_isReconstructing.load())
     {
+        buffer.clear();
+        return;
+    }
+
+    if(!_client || !_client->isConnected() || !_engine)
+    {
+        buffer.clear();
         return;
     }
 
@@ -241,14 +254,59 @@ class UDSPathGenerator
 // clang-format on
 void PluginProcessor::relaunchApp()
 {
-    // 既存の接続をリセット
-    if(_client && _client->isConnected())
-    {
-        // 必要に応じて接続を閉じる処理
-    }
-    
-    // 新たに接続を試みる
-    linkWithApp();
+    // メッセージスレッドで安全に再構築を実行
+    callFunctionOnMessageThread([this] {
+        Logger::info("Starting engine reconstruction for relaunch");
+
+        // 再構築中フラグを立てる（オーディオ処理を一時停止）
+        _isReconstructing.store(true);
+
+        // 既存の接続をリセット
+        if(_client && _client->isConnected())
+        {
+            // 接続を完全に切断
+            _client.reset();
+        }
+
+        // 全てのコンポーネントを破棄
+        _udpChannel.reset();
+        _client.reset();
+        _handler.reset();
+        _engine.reset();
+
+        // 全てのコンポーネントを再構築（初期状態）
+        _engine = std::make_unique<AudioEngine>("novonotes.sonora-app-bridge.v1",
+                                                "Sonora App Bridge", true);
+        _handler = std::make_unique<ProtoMessageHandler>(*_engine);
+        _client = std::make_unique<SocketClient>(*_handler);
+        _udpChannel = std::make_unique<UdpChannel>(*_handler);
+
+        // Handlerにdelegatesを再設定
+        _handler->setDelegates(_client.get(), _udpChannel.get(), _udpChannel.get());
+
+        // UdpChannelを再初期化
+        bool udpStartResult = _udpChannel->startReceiving(0);
+        if (udpStartResult) {
+            Logger::info("UDP channel restarted on port " + String(_udpChannel->getBoundPort()));
+        } else {
+            Logger::error("Failed to restart UDP channel");
+        }
+
+        // prepareToPlayが呼ばれていた場合は再実行
+        if(_isPrepared)
+        {
+            _engine->getAudioService().prepareToPlay(_currentSampleRate, _currentBlockSize);
+            setLatencySamples(_currentBlockSize);
+        }
+
+        // 再構築完了、オーディオ処理を再開
+        _isReconstructing.store(false);
+
+        Logger::info("Engine reconstruction completed");
+
+        // 新たに接続を試みる
+        linkWithApp();
+    });
 }
 
 void PluginProcessor::cancelReconnection()
