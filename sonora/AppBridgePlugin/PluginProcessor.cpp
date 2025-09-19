@@ -254,59 +254,62 @@ class UDSPathGenerator
 // clang-format on
 void PluginProcessor::relaunchApp()
 {
-    // メッセージスレッドで安全に再構築を実行
-    callFunctionOnMessageThread([this] {
-        Logger::info("Starting engine reconstruction for relaunch");
+    Logger::info("Manual relaunch requested");
 
-        // 再構築中フラグを立てる（オーディオ処理を一時停止）
-        _isReconstructing.store(true);
+    // エンジンを再構築してから新アプリ起動
+    reconstructEngine();
+    linkWithApp();
+}
 
-        // 既存の接続をリセット
-        if(_client && _client->isConnected())
-        {
-            // 接続を完全に切断
-            _client.reset();
-        }
+void PluginProcessor::reconstructEngine()
+{
+    Logger::info("Starting engine reconstruction");
 
-        // 全てのコンポーネントを破棄
-        _udpChannel.reset();
+    // 再構築中フラグを立てる（オーディオ処理を一時停止）
+    _isReconstructing.store(true);
+
+    // 既存の接続をリセット
+    if(_client && _client->isConnected())
+    {
+        // 接続を完全に切断
         _client.reset();
-        _handler.reset();
-        _engine.reset();
+    }
 
-        // 全てのコンポーネントを再構築（初期状態）
-        _engine = std::make_unique<AudioEngine>("novonotes.sonora-app-bridge.v1",
-                                                "Sonora App Bridge", true);
-        _handler = std::make_unique<ProtoMessageHandler>(*_engine);
-        _client = std::make_unique<SocketClient>(*_handler);
-        _udpChannel = std::make_unique<UdpChannel>(*_handler);
+    // 全てのコンポーネントを破棄
+    _udpChannel.reset();
+    _client.reset();
+    _handler.reset();
+    _engine.reset();
 
-        // Handlerにdelegatesを再設定
-        _handler->setDelegates(_client.get(), _udpChannel.get(), _udpChannel.get());
+    // 全てのコンポーネントを再構築（初期状態）
+    _engine = std::make_unique<AudioEngine>("novonotes.sonora-app-bridge.v1",
+                                            "Sonora App Bridge", true);
+    _handler = std::make_unique<ProtoMessageHandler>(*_engine);
+    _client = std::make_unique<SocketClient>(*_handler);
+    _udpChannel = std::make_unique<UdpChannel>(*_handler);
 
-        // UdpChannelを再初期化
-        bool udpStartResult = _udpChannel->startReceiving(0);
-        if (udpStartResult) {
-            Logger::info("UDP channel restarted on port " + String(_udpChannel->getBoundPort()));
-        } else {
-            Logger::error("Failed to restart UDP channel");
-        }
+    // Handlerにdelegatesを再設定
+    _handler->setDelegates(_client.get(), _udpChannel.get(), _udpChannel.get());
 
-        // prepareToPlayが呼ばれていた場合は再実行
-        if(_isPrepared)
-        {
-            _engine->getAudioService().prepareToPlay(_currentSampleRate, _currentBlockSize);
-            setLatencySamples(_currentBlockSize);
-        }
+    // UdpChannelを再初期化
+    bool udpStartResult = _udpChannel->startReceiving(0);
+    if (udpStartResult) {
+        Logger::info("UDP channel restarted on port " + String(_udpChannel->getBoundPort()));
+    } else {
+        Logger::error("Failed to restart UDP channel");
+    }
 
-        // 再構築完了、オーディオ処理を再開
-        _isReconstructing.store(false);
+    // prepareToPlayが呼ばれていた場合は再実行
+    if(_isPrepared)
+    {
+        _engine->getAudioService().prepareToPlay(_currentSampleRate, _currentBlockSize);
+        setLatencySamples(_currentBlockSize);
+    }
 
-        Logger::info("Engine reconstruction completed");
+    // 再構築完了、オーディオ処理を再開
+    _isReconstructing.store(false);
 
-        // 新たに接続を試みる
-        linkWithApp();
-    });
+    Logger::info("Engine reconstruction completed");
 }
 
 void PluginProcessor::cancelReconnection()
@@ -376,6 +379,11 @@ void PluginProcessor::attemptReconnection()
         // 再接続失敗
         Logger::info("Failed to reconnect within timeout period");
         _isReconnecting.store(false);
+
+        // 再接続失敗時は新アプリを起動（メッセージスレッドで実行）
+        callFunctionOnMessageThread([this] {
+            linkWithApp();
+        });
     };
     
     _reconnectionThread.startThread();
@@ -557,8 +565,11 @@ void PluginProcessor::timerCallback()
     if(wasConnected && !isConnected)
     {
         // 切断を検知
-        Logger::info("Connection lost, attempting automatic reconnection...");
+        Logger::info("Connection lost, reconstructing engine then attempting reconnection...");
         _disconnectionTime.store(Time::currentTimeMillis());
+
+        // エンジンを再構築してから再接続を試みる
+        reconstructEngine();
         attemptReconnection();
     }
     

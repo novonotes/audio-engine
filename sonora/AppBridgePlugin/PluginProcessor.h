@@ -99,6 +99,9 @@ class PluginProcessor : public AudioProcessor, public Timer
     
     // 再接続を試みる
     void attemptReconnection();
+
+    // エンジンの完全再構築（接続切断時に実行）
+    void reconstructEngine();
     std::unique_ptr<AudioEngine> _engine;
     std::unique_ptr<ProtoMessageHandler> _handler;
     std::unique_ptr<SocketClient> _client;
