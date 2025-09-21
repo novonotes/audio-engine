@@ -377,13 +377,8 @@ void PluginProcessor::attemptReconnection()
         }
         
         // 再接続失敗
-        Logger::info("Failed to reconnect within timeout period");
+        Logger::info("Reconnection timed out or was cancelled by user");
         _isReconnecting.store(false);
-
-        // 再接続失敗時は新アプリを起動（メッセージスレッドで実行）
-        callFunctionOnMessageThread([this] {
-            linkWithApp();
-        });
     };
     
     _reconnectionThread.startThread();
